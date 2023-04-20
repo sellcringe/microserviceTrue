@@ -1,0 +1,71 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.9-management
+    hostname: rabbitmq
+    restart: always
+    ports:
+      - 5672:15672
+
+  postgres_profile:
+    container_name: postgres_profile
+    image: postgres
+    restart: always
+    environment:
+      # POSTGRES_HOST_AUTH_METHOD: trust
+      PG_USER: postgres
+      POSTGRES_PASSWORD: rootroot
+      POSTGRES_DB: profile_db
+    expose:
+      - 5432
+    ports:
+      - 5432
+
+  postgres_user:
+    container_name: postgres_user
+    image: postgres
+    restart: always
+    environment:
+      # POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: rootroot
+      POSTGRES_DB: user_db
+    expose:
+      - 5432
+    ports:
+      - 5432
+
+  profile:
+    container_name: profile
+    depends_on:
+      - postgres_profile
+      - rabbitmq
+    image: profile:latest
+    restart: always
+    ports:
+      - 5672
+    command: npm run start:dev user
+
+
+  user:
+    container_name: user
+    depends_on:
+      - postgres_user
+      - rabbitmq
+    image: user:latest
+    restart: always
+    ports:
+      - 5672
+
+
+  gateway:
+    container_name: gateway
+    depends_on:
+      - profile
+      - user
+    image: gateway:latest
+    restart: always
+    ports:
+    - 5000:5000
